@@ -1,0 +1,117 @@
+apiVersion: kubeflow.org/v1
+kind: PyTorchJob
+metadata:
+  name: pytorch-training
+  namespace: fine-tuning-testing
+spec:
+  pytorchReplicaSpecs:
+    Master:
+      replicas: 1
+      restartPolicy: Never
+      template:
+        metadata:
+          annotations:
+            k8s.v1.cni.cncf.io/networks: |-
+              [
+                {
+                  "name": "network-port-1",
+                  "namespace": "default"
+                }
+              ]
+        spec:
+          containers:
+            - name: pytorch
+              image: path.to.image
+              imagePullPolicy: Always
+              env: &env
+                - name: NCCL_DEBUG
+                  value: "INFO"
+                - name: NCCL_IGNORE_CPU_AFFINITY
+                  value: "1"
+                - name: NCCL_CROSS_NIC
+                  value: "0"
+                - name: NCCL_SOCKET_IFNAME
+                  value: "net1"
+                - name: NCCL_IB_QPS_PER_CONNECTION
+                  value: "1"
+#to disable infiniband and use TCP
+#                - name: NCCL_IB_DISABLE
+#                  value: "1"
+#                - name: NCCL_NET
+#                  value: "socket"
+#                - name: NCCL_IBEXT_DISABLE
+#                  value: "1"
+
+              volumeMounts:
+                - name: storage-volume
+                  mountPath: /mnt/storage
+                - name: shm-volume
+                  mountPath: /dev/shm
+              resources:
+                requests:
+                  nvidia.com/gpu: "1"
+                  memory: "10Gi"
+                  cpu: "1"
+                  openshift.io/port1: "1"
+                limits:
+                  nvidia.com/gpu: "1"
+                  openshift.io/port1: "1"
+              securityContext:
+                runAsUser: 0
+                runAsGroup: 0
+                capabilities:
+                  add: ["IPC_LOCK", "SYS_RESOURCE", "NET_RAW", "SYS_CHROOT", "AUDIT_WRITE"]
+          volumes:
+            - name: storage-volume
+              persistentVolumeClaim:
+                claimName: res50-storage
+            - name: shm-volume
+              emptyDir:
+                medium: Memory
+                sizeLimit: 10Gi
+    Worker:
+      replicas: 2
+      restartPolicy: Never
+      template:
+        metadata:
+          annotations:
+            k8s.v1.cni.cncf.io/networks: |-
+              [
+                {
+                  "name": "network-port-1",
+                  "namespace": "default"
+                }
+              ]
+        spec:
+          containers:
+            - name: pytorch
+              image: path.to.image
+              imagePullPolicy: Always
+              env: *env
+              volumeMounts:
+                - name: storage-volume
+                  mountPath: /mnt/storage
+                - name: shm-volume
+                  mountPath: /dev/shm
+              resources:
+                requests:
+                  nvidia.com/gpu: "1"
+                  memory: "10Gi"
+                  cpu: "1"
+                  openshift.io/port1: "1"
+                limits:
+                  nvidia.com/gpu: "1"
+                  openshift.io/port1: "1"
+              securityContext:
+                runAsUser: 0
+                runAsGroup: 0
+                capabilities:
+                  add: ["IPC_LOCK", "SYS_RESOURCE", "NET_RAW", "SYS_CHROOT", "AUDIT_WRITE"]
+          volumes:
+            - name: storage-volume
+              persistentVolumeClaim:
+                claimName: res50-storage
+            - name: shm-volume
+              emptyDir:
+                medium: Memory
+                sizeLimit: 10Gi

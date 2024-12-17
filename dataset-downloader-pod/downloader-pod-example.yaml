@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: dataset-downloader
+  namespace: pytorch-workspace
+spec:
+  containers:
+  - name: downloader
+    image: alpine
+    command: ["/bin/sh", "-c"]
+    args:
+      - |
+        apk add --no-cache curl && \
+        mkdir -p /mnt/data && \
+        cd /mnt/data && \
+        curl -L -O https://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz && \
+        tar -xvzf cifar-10-python.tar.gz
+        mv cifar-10-batches-py dataset
+        mkdir output
+    volumeMounts:
+    - mountPath: /mnt/data
+      name: dataset-storage
+  restartPolicy: OnFailure
+  volumes:
+  - name: dataset-storage
+    persistentVolumeClaim:
+      claimName: res50-storage

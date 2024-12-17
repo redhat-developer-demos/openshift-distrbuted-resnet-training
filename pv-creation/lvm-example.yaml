@@ -1,0 +1,26 @@
+apiVersion: lvm.topolvm.io/v1alpha1
+kind: LVMCluster
+metadata:
+  name: resnet50-disk
+  namespace: openshift-lvms-operator
+spec:
+  storage:
+    deviceClasses:
+    - name: lvms-vg1
+      fstype: ext4
+      default: false
+      deviceSelector:
+        paths:
+        - /dev/disk/by-path/pci-0000:e5:00.0-nvme-1
+        forceWipeDevicesAndDestroyAllData: true
+      thinPoolConfig:
+        name: thin-pool-1
+        sizePercent: 90
+        overprovisionRatio: 10
+      nodeSelector:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: kubernetes.io/hostname
+            operator: In
+            values:
+            - cc37-h13-000-r750.rdu3.labs.perfscale.redhat.com

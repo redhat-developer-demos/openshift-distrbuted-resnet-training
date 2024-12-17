@@ -1,0 +1,27 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: training-operator-cluster-role
+rules:
+- apiGroups: [""]
+  resources: ["persistentvolumes", "persistentvolumeclaims", "services", "endpoints", "events"]
+  verbs: ["get", "list", "watch", "create", "delete", "update", "patch"]
+- apiGroups: ["storage.k8s.io"]
+  resources: ["storageclasses"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["extensions"]
+  resources: ["podsecuritypolicies"]
+  verbs: ["use"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: training-operator-cluster-role-binding
+subjects:
+- kind: ServiceAccount
+  name: kubeflow-training-operator
+  namespace: redhat-ods-applications
+roleRef:
+  kind: ClusterRole
+  name: training-operator-cluster-role
+  apiGroup: rbac.authorization.k8s.io
